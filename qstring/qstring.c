@@ -1,5 +1,9 @@
 #include "qstring.h"
-#include <assert.h>
+
+/*declare a empty qstring*/
+qstring qstrempty(){
+	return NULL;
+}
 
 /*construct a qstring from const char* (char*) 
  *return a qstring, which equal to the type of char*;
@@ -96,6 +100,7 @@ void expand(void){
 		pool.size = POOLING_START_SIZE;
 }
 
+/*get the pointer to the interned node q*/
 struct qstr_node* _getInternNode(QString* q){
 	size_t index = q->q_hash & q->hash_size;
 	struct qstr_node* temp = pool.node[index];
@@ -107,6 +112,12 @@ struct qstr_node* _getInternNode(QString* q){
 	return NULL;
 }
 
+/*if a qstr is interned into the interning pool, you should free it using this ugly function,
+ *this function just reduce the ref_count of the given QString* q by 1,
+ *if the given node's ref_count equals to 0, delete it from interning pool
+ *
+ *!!!right now this function will trigger the memory leak.
+ */
 void _internqstrfree(QString* q){
 	assert(q->type == INTERNED);
 	struct qstr_node* qn = _getInternNode(q);
@@ -142,6 +153,7 @@ unsigned int qstrhash(qstring str){
 	return (hash & 0x7FFFFFFF);
 }
 
+/*make room for the current long qstr*/
 QString* qstrMakeRoom(QString* q, size_t addlen){
 	if (addlen < q->free)
 		return q;
@@ -187,6 +199,61 @@ qstring qstrcat(qstring s, const char* t){
 	return qstrncat(s, t, strlen(t));
 }
 
+/*tolower*/
+void qstrtolower(qstring s){
+	QString* q = (QString*)(s - sizeof(QString));
+	if (q->type == INTERNED){/*if interned*/
+		char* temp = NULL;
+		temp = qstrdeepcpy(temp, s, q->len);
+		_internqstrfree(q);/*free the origin interned qstr*/
+		for (size_t i = 0; i < q->len; ++i)
+			temp[i] = tolower(temp[i]);
+		s = qstrnew(temp);
+	}
+
+	for (size_t i = 0; i < q->len; i++)
+		s[i] = tolower(s[i]);
+}
+
+/*qstrcpy, increase the ref_count by 1*/
+qstring qstrcpy(qstring dest, qstring src, size_t c_len){
+	QString* q_src = (QString*)(src - sizeof(QString));
+	q_src->ref_count++;
+	dest = src;
+	return dest;
+}
+
+/*deep copy...whatever the type(interned, or dynamic alloc on heap) of qstr src, 
+ *copy it to a new char* dest
+ */
+char* qstrdeepcpy(char* dest, qstring src, size_t c_len){
+	/*if dest point to a memory, free it*/
+	if (dest) free(dest);
+
+	dest = (char*)malloc(sizeof(char)*(c_len + 1));
+	assert(dest);
+	/*todo*/
+	if (!dest)
+		;
+	memcpy(dest, src, c_len + 1);
+	return dest;
+}
+
+/*to upper*/
+void qstrtoupper(qstring s){
+	QString* q = (QString*)(s - sizeof(QString));
+	if (q->type == INTERNED){/*if interned*/
+		char* temp = NULL;
+		temp = qstrdeepcpy(temp, s, q->len);
+		_internqstrfree(q);/*free the origin interned qstr*/
+		for (size_t i=0; i < q->len; ++i)
+			temp[i] = toupper(temp[i]);
+		s = qstrnew(temp);
+	}
+
+	for (size_t i = 0; i < q->len; i++)
+		s[i] = toupper(s[i]);
+}
 
 /*return the length of qstring, O(1) tata, haha*/
 size_t qstrlen(const qstring s){
