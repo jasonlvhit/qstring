@@ -1,7 +1,7 @@
 #include "qstring.h"
 
 /*declare a empty qstring*/
-qstring qstrempty(){
+qstring qstrempty(void){
 	return NULL;
 }
 
@@ -75,13 +75,13 @@ qstring qstrintern(QString *s){
 	if (!(*temp))
 		(pool.count)++;
 
-	while ((*temp)){
-		temp = &((*temp)->next);
+	while ((*temp)!=NULL){
 		if (strcmp((*temp)->data->cstr, s->cstr) == 0){
 			_qstrfree(s);
 			(*temp)->data->ref_count++; //reference count ++
 			return (*temp)->data->cstr;
 		}
+		temp = &((*temp)->next);
 	}
 
 	*temp = q;
@@ -108,6 +108,7 @@ struct qstr_node* _getInternNode(QString* q){
 	while (temp){
 		if (strcmp(temp->data->cstr, q->cstr) == 0)
 			return temp;
+		temp = temp->next;
 	}
 	return NULL;
 }
@@ -116,15 +117,17 @@ struct qstr_node* _getInternNode(QString* q){
  *this function just reduce the ref_count of the given QString* q by 1,
  *if the given node's ref_count equals to 0, delete it from interning pool
  *
- *!!!right now this function will trigger the memory leak.
+ *!!!
  */
 void _internqstrfree(QString* q){
 	assert(q->type == INTERNED);
 	struct qstr_node* qn = _getInternNode(q);
 	if (--(qn->data->ref_count) == 0){/*-- reference_count, if ref_count == 0 , 
 									  free the qstr*/
-		//free(qn->data);
-		qn = qn->next; //!!!ÄÚ´æÐ¹Â©
+		struct qstr_node **_free = &(qn->next);
+		free(qn);
+		qn = *_free; 
+		//!!!
 	}
 }
 
@@ -216,7 +219,7 @@ void qstrtolower(qstring s){
 }
 
 /*qstrcpy, increase the ref_count by 1*/
-qstring qstrcpy(qstring dest, qstring src, size_t c_len){
+qstring qstrcpy(qstring dest, qstring src){
 	QString* q_src = (QString*)(src - sizeof(QString));
 	q_src->ref_count++;
 	dest = src;
@@ -253,6 +256,41 @@ void qstrtoupper(qstring s){
 
 	for (size_t i = 0; i < q->len; i++)
 		s[i] = toupper(s[i]);
+}
+/*
+size_t qprintf(const char* fmt, ...){
+	return 0;
+}
+
+qstring qstrformat(const char* fmt, va_list ap){
+	return NULL;
+}
+*/
+/*remove space around a qstr*/
+qstring qstrtrim(qstring s){
+	QString* q = (QString*)(s - sizeof(QString));
+	qstring start, end, sp, ep;
+	size_t len = 0;
+	sp = start = s;
+	ep = end = s + qstrlen(s) - 1;
+	
+	while (sp <= end && strchr(" ", *sp)) sp++;
+	while (ep > start && strchr(" ", *ep)) ep--;
+	len = (sp - ep)<=0 ? ((ep - sp) + 1) : 0;
+	
+	if (q->type == INTERNED && len != q ->len){/*interned*/
+		char* temp = NULL;
+		sp[len] = '\0';
+		temp = qstrdeepcpy(temp, sp, len);
+		_internqstrfree(q);
+		return qstrnew(temp);
+	}
+	/*else*/
+	if (q->cstr != sp) memmove(q->cstr, sp, len);
+	q->cstr[len] = '\0';
+	q->free += (q->len - len);
+	q->len = len;
+	return s;
 }
 
 /*return the length of qstring, O(1) tata, haha*/

@@ -45,8 +45,10 @@ typedef struct String_Pool{
 
 Pool pool;
 
+//const char* cset = "\n\t\r "; //space charactor set
+
 /*user level function*/
-qstring qstrempty();
+qstring qstrempty(void);
 qstring qstrnew(const char *);
 size_t qstrlen(const qstring);
 size_t qstravail(const qstring);
@@ -60,11 +62,11 @@ qstring qstrcpy(qstring, qstring);
 qstring qstrncpy(qstring, qstring, size_t);
 void qstrtolower(qstring);
 void qstrtoupper(qstring);
-qstring qstrcpy(qstring dest, qstring src, size_t);
+qstring qstrcpy(qstring dest, qstring src);
 char* qstrdeepcpy(char* dest, qstring src, size_t);
 size_t qprintf(const char*, ...);
 qstring qsprintf(qstring, const char* fmt, ...);
-int qstrtrim(const qstring);
+qstring qstrtrim(qstring);
 
 
 /*lower level function*/
@@ -75,5 +77,6 @@ bool _qstrequal(const QString*, const QString*);
 QString* qstrMakeRoom(QString*, size_t);
 qstring qstrintern(QString*);
 struct qstr_node* _getInternNode(QString*);
+qstring qstrformat(const char*, va_list);
 
 #endif /*__QSTRING_H*/
