@@ -21,12 +21,12 @@ int main(void){
 	printf("\n");
 	printf(sc);
 	printf("\n");
-	
+	/*
 	s = qstrcat(s, "sorry, i am no longer short.");
 	q = (QString*)(s - sizeof(QString));
 	printf(s);
 	printf("\n");
-	/*
+	
 	qstrtoupper(s);
 	printf(s);
 	printf("\n");
@@ -34,6 +34,8 @@ int main(void){
 	printf(s);
 	printf("\n");
 	*/
+	int a = 19;
+	//qstring papa = qstrsprintf("helllo %d %s\n", a, s);
 	qstring songmingye = qstrnew(" songmingyedahaoren   ");
 	songmingye = qstrtrim(songmingye);
 	printf(songmingye);

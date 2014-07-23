@@ -19,6 +19,9 @@
 /*for dynamic string append*/
 #define QSTR_MAX_PREALLOC (1024*1024)
 
+/*fro qstring format*/
+#define QSTR_FORMAT_TEMP 1024
+
 typedef char* qstring;
 
 typedef struct {
@@ -64,10 +67,10 @@ void qstrtolower(qstring);
 void qstrtoupper(qstring);
 qstring qstrcpy(qstring dest, qstring src);
 char* qstrdeepcpy(char* dest, qstring src, size_t);
-size_t qprintf(const char*, ...);
-qstring qsprintf(qstring, const char* fmt, ...);
+int qprintf(const char*, ...);
+int qsprintf(qstring, const char* fmt, ...);
 qstring qstrtrim(qstring);
-
+//temp
 
 /*lower level function*/
 void expand(void);

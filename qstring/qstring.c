@@ -257,15 +257,76 @@ void qstrtoupper(qstring s){
 	for (size_t i = 0; i < q->len; i++)
 		s[i] = toupper(s[i]);
 }
-/*
-size_t qprintf(const char* fmt, ...){
-	return 0;
+/*same with standard C lib sprintf function*/
+int qsprintf(qstring s, const char* fmt, ...){
+	QString *q = (QString*)(s - sizeof(QString));
+	va_list ap;
+	va_start(ap, fmt);
+	qstring temp = qstrformat(fmt, ap);
+	if (strlen(temp) >= INTERNING_SIZE && q->type == INTERNED)
+		_internqstrfree(q);
+	else
+		free(q);
+	
+	s = qstrnew(temp);
+	va_end(ap);
+	return qstrlen(s);
 }
 
-qstring qstrformat(const char* fmt, va_list ap){
-	return NULL;
+/*print the format qstring, and 
+ *return the number of charactor printed.
+ */
+int qprintf(const char* fmt, ...){
+	va_list ap;
+	va_start(ap, fmt);
+	qstring s = qstrformat(fmt, ap);
+	printf(s);
+	return strlen(s);
 }
-*/
+
+/*return a formated qstring with args list */
+qstring qstrformat(const char* fmt, va_list ap){
+	char * temp = NULL;
+	temp = (char*)malloc(QSTR_FORMAT_TEMP);
+	assert(temp);
+	//to do : check malloc
+	char* result;
+	int n = vsnprintf(temp, QSTR_FORMAT_TEMP, fmt, ap);
+	if (n >= QSTR_FORMAT_TEMP){
+		int sz = QSTR_FORMAT_TEMP * 2;
+		for (;;){
+			result = malloc(sz);
+			//todo: check malloc
+			assert(result);
+			n = vsnprintf(result, sz, fmt, ap);
+			if (n >= sz){
+				free(result);
+				sz *= 2;
+			}
+			else{
+				break;
+			}
+		}
+	}
+	else{
+		result = temp;
+	}
+
+	QString* q = (QString*)malloc(sizeof(QString) + n + 1);
+	//todo : check malloc 
+	assert(q);
+	q->type = 0;
+	q->free = 0;
+	q->hash_size = -1;
+	q->q_hash = -1;
+	q->len = n;
+	q->ref_count = 1;
+	memcpy(q->cstr, result, n);
+	q->cstr[n] = '\0';
+	free(result);
+	return q->cstr;
+}
+
 /*remove space around a qstr*/
 qstring qstrtrim(qstring s){
 	QString* q = (QString*)(s - sizeof(QString));
