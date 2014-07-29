@@ -1,3 +1,12 @@
+/* QString, A simple C dynamic strings library
+*
+* Copyright (c) 2014 Jason Lyu <jasonlvhit at gmail dot com>
+* All rights reserved.
+* 
+* @ https:github.com/jasonlvhit/qstring
+* @ jasonlvhit@gmail.com
+*/
+
 #ifndef __QSTRING_H
 #define __QSTRING_H
 
@@ -70,15 +79,18 @@ char* qstrdeepcpy(char* dest, qstring src, size_t);
 int qprintf(const char*, ...);
 int qsprintf(qstring, const char* fmt, ...);
 qstring qstrtrim(qstring);
+void qstrrelease(qstring);
+char* qstrslice(qstring s, size_t begin, size_t end);
 //temp
 
 /*lower level function*/
+QString* _qstrnew(const char* cstr_);
 void expand(void);
 void _internqstrfree(QString*);
 void _qstrfree(QString*);
 bool _qstrequal(const QString*, const QString*);
 QString* qstrMakeRoom(QString*, size_t);
-qstring qstrintern(QString*);
+QString* qstrintern(QString*);
 struct qstr_node* _getInternNode(QString*);
 qstring qstrformat(const char*, va_list);
 

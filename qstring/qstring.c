@@ -1,3 +1,12 @@
+/* QString, A simple C dynamic strings library
+*
+* Copyright (c) 2014 Jason Lyu <jasonlvhit at gmail dot com>
+* All rights reserved.
+*
+* @ https:github.com/jasonlvhit/qstring
+* @ jasonlvhit@gmail.com
+*/
+
 #include "qstring.h"
 
 /*declare a empty qstring*/
@@ -9,6 +18,15 @@ qstring qstrempty(void){
  *return a qstring, which equal to the type of char*;
  */ 
 qstring qstrnew(const char *cstr_){
+	return _qstrnew(cstr_)->cstr;
+}
+
+/* lower level function serve the function for 
+ * construct a new qstring,
+ * for a given const char* ,
+ * return a QString*.
+ */
+QString* _qstrnew(const char* cstr_){
 	QString *s;
 	size_t len_ = strlen(cstr_);
 	s = (QString*)malloc(sizeof(QString) + len_ + 1);
@@ -21,13 +39,13 @@ qstring qstrnew(const char *cstr_){
 	s->free = 0;
 	s->len = len_;
 	s->type = 0;
-	s->q_hash = qstrhash(s ->cstr);
+	s->q_hash = qstrhash(s->cstr);
 	s->ref_count = 1;
 	s->hash_size = -1;
 
 	if (s->len < INTERNING_SIZE)
 		return qstrintern(s);
-	return s->cstr;
+	return s;
 }
 
 /*user level function, same to the strcmp*/
@@ -59,7 +77,7 @@ bool qstrequal(const qstring l, const qstring r){
 
 /*interning a string into the string pool
  */
-qstring qstrintern(QString *s){
+QString* qstrintern(QString *s){
 	if (pool.count >= pool.size)
 		expand();
 
@@ -87,7 +105,7 @@ qstring qstrintern(QString *s){
 	*temp = q;
 	q->next = NULL;
 	q->data->type = INTERNED;
-	return q->data->cstr;
+	return q->data;
 }
 
 /*expend the size for the interning pool*/
@@ -124,9 +142,9 @@ void _internqstrfree(QString* q){
 	struct qstr_node* qn = _getInternNode(q);
 	if (--(qn->data->ref_count) == 0){/*-- reference_count, if ref_count == 0 , 
 									  free the qstr*/
-		struct qstr_node **_free = &(qn->next);
+		struct qstr_node *_free = (qn->next);
 		free(qn);
-		qn = *_free; 
+		qn = _free; 
 		//!!!
 	}
 }
@@ -135,7 +153,7 @@ void _internqstrfree(QString* q){
 void qstrfree(qstring s){
 	QString* q = (QString*)(s - sizeof(QString));
 	if (q->type == INTERNED){/*if interned*/
-		_internqstrfree(q);
+		//_internqstrfree(q);
 		return;
 	}
 	_qstrfree(q);
@@ -179,9 +197,9 @@ QString* qstrMakeRoom(QString* q, size_t addlen){
 qstring qstrncat(qstring s, const char* t, size_t t_len){
 	QString * q = ((QString*)(s - sizeof(QString)));
 	if (q->type == INTERNED){/*if interned*/
-		s = qstrnew(strncat(s, t, t_len));
-		_internqstrfree(q);
-		return s;
+		qstring ns = qstrnew(strncat(s, t, t_len));
+		//_internqstrfree(q);
+		return ns;
 	}
 	/*realloc*/
 	q = qstrMakeRoom(q, t_len);
@@ -208,10 +226,10 @@ void qstrtolower(qstring s){
 	if (q->type == INTERNED){/*if interned*/
 		char* temp = NULL;
 		temp = qstrdeepcpy(temp, s, q->len);
-		_internqstrfree(q);/*free the origin interned qstr*/
+		//_internqstrfree(q);/*free the origin interned qstr*/
 		for (size_t i = 0; i < q->len; ++i)
 			temp[i] = tolower(temp[i]);
-		s = qstrnew(temp);
+		q = _qstrnew(temp);
 	}
 
 	for (size_t i = 0; i < q->len; i++)
@@ -248,10 +266,10 @@ void qstrtoupper(qstring s){
 	if (q->type == INTERNED){/*if interned*/
 		char* temp = NULL;
 		temp = qstrdeepcpy(temp, s, q->len);
-		_internqstrfree(q);/*free the origin interned qstr*/
+		//_internqstrfree(q);/*free the origin interned qstr*/
 		for (size_t i=0; i < q->len; ++i)
 			temp[i] = toupper(temp[i]);
-		s = qstrnew(temp);
+		q = _qstrnew(temp);
 	}
 
 	for (size_t i = 0; i < q->len; i++)
@@ -354,6 +372,33 @@ qstring qstrtrim(qstring s){
 	return s;
 }
 
+/* slice , return a char * of the given range
+ * start and end between begin and end;
+ * for example, qstrslice("Hello world", 2, 5)
+ * will return "llo"
+ */
+char* qstrslice(qstring s, size_t begin, size_t end){
+	assert(end - begin >= 0);
+	char* re = NULL;
+	re = (char*)malloc(sizeof(char) * (end - begin));
+	assert(re);
+	// to do: check malloc
+	if (re == NULL)
+		;
+	for (size_t i = 0; i != (end - begin); ++i)
+		re[i] = s[begin + i];
+	return re;
+}
+
+/*release the free space for qstring s
+*/
+void qstrrelease(qstring s){
+	if (qstravail(s) == 0) return;
+	QString * q = (QString*)(s - sizeof(QString));
+	q = (QString*)realloc(q, sizeof(QString) + qstrlen(s) + 1);
+	q->free = 0;
+}
+
 /*return the length of qstring, O(1) tata, haha*/
 size_t qstrlen(const qstring s){
 	return ((QString*)(s - sizeof(QString)))->len;
@@ -364,9 +409,7 @@ size_t qstravail(const qstring s){
 	return ((QString*)(s - sizeof(QString)))->free;
 }
 
-/*
 QString * _getQString(const qstring s){
 	return (QString*)(s - sizeof(QString));
 }
-*/
 
