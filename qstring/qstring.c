@@ -97,7 +97,7 @@ QString* qstrintern(QString *s){
 		if (strcmp((*temp)->data->cstr, s->cstr) == 0){
 			_qstrfree(s);
 			(*temp)->data->ref_count++; //reference count ++
-			return (*temp)->data->cstr;
+			return (*temp)->data;
 		}
 		temp = &((*temp)->next);
 	}
@@ -105,6 +105,7 @@ QString* qstrintern(QString *s){
 	*temp = q;
 	q->next = NULL;
 	q->data->type = INTERNED;
+
 	return q->data;
 }
 
@@ -198,7 +199,6 @@ qstring qstrncat(qstring s, const char* t, size_t t_len){
 	QString * q = ((QString*)(s - sizeof(QString)));
 	if (q->type == INTERNED){/*if interned*/
 		qstring ns = qstrnew(strncat(s, t, t_len));
-		//_internqstrfree(q);
 		return ns;
 	}
 	/*realloc*/
