@@ -41,7 +41,7 @@ typedef struct {
 	int hash_size;  //2pow - 1
 	unsigned int q_hash;
 	char cstr[];
-}QString;
+} QString;
 
 struct qstr_node{
 	QString *data;
@@ -53,7 +53,7 @@ typedef struct String_Pool{
 	struct qstr_node *node[POOLING_SIZE];
 	size_t size; //2 pow, start from 16
 	size_t count;
-}Pool;
+} Pool;
 
 Pool pool;
 
